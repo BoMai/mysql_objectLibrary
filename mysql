@@ -1,0 +1,199 @@
+<?php
+
+class mysql 
+{	
+	function getQuery ($sql , $id='')
+	{
+		$query = mysql_query($sql);
+		$values = array () ; 
+		while ($row = mysql_fetch_array ($query,MYSQL_ASSOC)) 
+		{
+			if (!isset($row[$id]) || !$id)
+			{
+				//return phrases('not found id ');
+				$values[] = $row ;
+
+			}
+			else
+			{
+				$values[$row[$id]] = $row ;
+			}
+		}
+		return $values ; 
+	}
+	function rowExist ($sql)
+	{
+		$query = mysql_query($sql);
+		$values = array () ; 
+		while ($row = mysql_fetch_array ($query,MYSQL_ASSOC)) 
+		{
+			return 1; 
+		}
+		return  0 ; 
+	}
+    
+	function query($query)
+    {
+        //echo $query;
+        $excute = mysql_query($query);
+        if($excute)
+        {
+            return $excute;
+        }
+        else
+        {
+            $msgRedirect = 'Error In Query';
+        }
+    }
+    function getSQuery($query,$primary,$get)
+    {
+        $data = array ();
+		$excute = mysql_query($query);
+        if($excute)
+        {
+            while ($getRow = mysql_fetch_array($excute , MYSQL_ASSOC))
+            {
+                $data[$getRow[$primary]] = $getRow[$get];
+            }
+            return $data;
+        }
+        else
+        {
+            $msgRedirect = 'Error In Query';
+        }
+    }
+    function insert($tableName , $data ,$is_htmlspecialchars=true)
+    {
+        // Cleaning The Data
+        foreach( $data as $column => &$value )
+        {
+            //$value = mysql_real_escape_string($value);
+            if (!get_magic_quotes_gpc())
+            {
+                //echo 'nnn';exit;
+                $value = mysql_real_escape_string($value);
+                //$value = htmlspecialchars( stripslashes( $value ) );
+            }
+
+
+            if($is_htmlspecialchars)
+                $value = htmlspecialchars($value);
+        }
+
+        $getKey = array_keys($data);
+
+        $values = "'".implode("' , '" , $data)."'";
+        $columns = "`".implode('` , `' , $getKey)."`";
+
+
+        $query = "INSERT INTO `$tableName` ($columns) VALUES ($values)";
+        if($this->query($query))
+        {
+            return mysql_insert_id();
+        }
+        else
+        {
+            return 0;
+            $this->error();
+
+        }
+    }
+    function fetch($query)
+    {
+        global $clsForms;
+
+        //echo $query;
+        $getRow = mysql_fetch_array($query , MYSQL_ASSOC);
+        if($getRow)
+        {
+            return $getRow;
+        }
+
+        //$clsForms->msg(mysql_error(),'red');
+
+        return 0;
+    }
+    function getSingleRow($query)
+    {
+        //$query  =  mysql_real_escape_string($query);
+        $execute = $this->query($query);
+        if($execute)
+        return $this->fetch($execute);
+        else
+            return 0;
+    }
+    function update($tableName,$data,$where ,$is_htmlspecialchars=true)
+    {
+        foreach( $data as $column => &$value )
+        {
+            //$value = mysql_real_escape_string($value);
+            if (!get_magic_quotes_gpc())
+            {
+                //echo 'nnn';exit;
+                $value = mysql_real_escape_string($value);
+                //$value = htmlspecialchars( stripslashes( $value ) );
+            }
+
+
+            if($is_htmlspecialchars)
+                $value = htmlspecialchars($value);
+        }
+
+        $getKey = array_keys($data);
+
+        $values = "'".implode("' , '" , $data)."'";
+        $columns = "`".implode('` , `' , $getKey)."`";
+
+        $Set = '';
+        foreach ($data as $columns => $values)
+        {
+            $Set.="`$columns` = '$values',";
+        }
+        $Set = subStr($Set,0,-1);
+
+        $wher ='';
+        foreach ($where as $columns=>$values)
+        {
+            $wher.="`$tableName`.`$columns` = $values ";
+        }
+
+        $query = "UPDATE `$tableName` SET  $Set WHERE $wher";
+        //echo $query;exit;
+        if($this->query($query))
+        {
+            return 1;
+        }
+        else
+        {
+
+            $this->error();
+            return 0;
+        }
+    }
+    function delete($tableName,$where)
+    {
+        $wher ='';
+        foreach ($where as $columns=>$values)
+        {
+            $wher.="`$tableName`.`$columns` = '$values' ";
+        }
+        $query = "DELETE FROM `$this->dbName`.`$tableName` WHERE $wher";
+        //echo $query;exit;
+        if($this->query($query))
+        {
+            return 1;
+        }
+        else
+        {
+
+            $this->error();
+            return 0;
+        }
+    }
+	function error () 
+	{
+		//echo 'error #500';
+		echo mysql_error();exit;		
+	}
+}
+?> 
